@@ -26,15 +26,17 @@ module.exports.loop = function () {
     }
   }
 
-  var minimumNumberOfHarvesters = 4;
+  var minimumNumberOfHarvesters = 10;
   var minimumNumberOfUpgraders = 1;
   var minimumNumberOfBuilders = 1;
   var minimumNumberOfRepairers = 2;
+  var minimumNumberOfWallRepairers = 1;
 
   var numberOfHarvesters = _.sum(Game.creeps, c => c.memory.role === 'harvester');
   var numberOfUpgraders = _.sum(Game.creeps, c => c.memory.role === 'upgrader');
   var numberOfBuilders = _.sum(Game.creeps, c => c.memory.role === 'builder');
   var numberOfRepairers = _.sum(Game.creeps, c => c.memory.role === 'repairer');
+  var numberOfWallRepairers = _.sum(Game.creeps, c => c.memory.role === 'wallRepairer');
 
   var role = null;
   
@@ -46,6 +48,8 @@ module.exports.loop = function () {
     role = 'repairer';
   } else if (numberOfBuilders < minimumNumberOfBuilders) {
     role = 'builder';
+  } else if (numberOfWallRepairers < minimumNumberOfWallRepairers) {
+    role = 'wallRepairer';
   } else {
     role = 'builder';
   }
@@ -69,16 +73,28 @@ module.exports.loop = function () {
       break;
   }
 
-  // var name = Game.spawns.Spawn1.createCreep(bodyArray, null, {
-  //   role: role,
-  //   working: false,
-  // });
-  var energyAvailable = Game.spawns.Spawn1.room.energyCapacityAvailable;
-  var name = Game.spawns.Spawn1.createCustomCreep(energyAvailable, role);
+  for (let spawn in Game.spawns) {
+    var room = Game.spawns[spawn].room;
 
-  if (name === ERR_NOT_ENOUGH_ENERGY && numberOfHarvesters === 0) {
-    energyAvailable = Game.spawns.Spawn1.room.energyAvailable;
-    name = Game.spawns.Spawn1.createCustomCreep(energyAvailable, role);
+    var towers = room.find(FIND_STRUCTURES, {
+      filter: s => s.structureType === STRUCTURE_TOWER
+    });
+
+    for (let tower of towers) {
+      var target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+
+      if (target) {
+        tower.attack(target);
+      }
+    }
+
+    var energyAvailable = room.energyCapacityAvailable;
+    var name = Game.spawns[spawn].createCustomCreep(energyAvailable, role);
+
+    if (name === ERR_NOT_ENOUGH_ENERGY && numberOfHarvesters === 0) {
+      energyAvailable = room.energyAvailable;
+      name = Game.spawns[spawn].createCustomCreep(energyAvailable, role);
+    }
   }
 
   if (typeof name === 'string') {
