@@ -14,14 +14,14 @@ module.exports = {
 
       if (structure) {
         if (creep.transfer(structure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(structure);
+          creep.moveTo(structure, {visualizePathStyle: {stroke: '#ffffff'}});
         }
       }
       
     } else {
       var source = creep.pos.findClosestByPath(FIND_SOURCES);
       if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(source);
+        creep.moveTo(source, {visualizePathStyle: {stroke: '#ffaa00'}});
       }
     }
   }
