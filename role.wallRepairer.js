@@ -7,7 +7,7 @@ module.exports = {
     } else if (creep.memory.working === false && creep.carry.energy === creep.carryCapacity) {
       creep.memory.working = true;
     }
-    
+
     if (creep.memory.working === true) {
       var walls = creep.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: s => s.structureType === STRUCTURE_WALL
@@ -15,9 +15,13 @@ module.exports = {
   
       var target = null;
       for (let percentage = 0.0001; percentage < 1; percentage += 0.0001) {
-        target = creep.pos.findClosestByPath(walls, {
-          filter: w => w.hits / w.hitsMax < percentage
-        });
+
+        for (let wall of walls) {
+          if (wall.hits / wall.hitsMax < percentage) {
+            target = wall;
+            break;
+          }
+        }
 
         if (target) {
           break;
