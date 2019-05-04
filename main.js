@@ -97,12 +97,4 @@ module.exports.loop = function () {
     }
   }
 
-  if (typeof name === 'string') {
-    console.log('Spawned new creep:', name);
-    console.log('Harvesters',numberOfHarvesters);
-    console.log('Upgraders',numberOfUpgraders);
-    console.log('Builders',numberOfBuilders);
-    console.log('Repairers',numberOfRepairers);
-  }
-
 }
