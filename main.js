@@ -14,9 +14,8 @@ function findPosForConstructionSite(room, spawn, structureType, areaToBuild) {
   // number of structures available to build
   var structuresAvailable = CONTROLLER_STRUCTURES[structureType][room.controller.level];
   // number of structures already built
-  var structuresBuilt = room.find(FIND_MY_STRUCTURES, { filter: { structureType } }).length;
+  var structuresBuilt = room.find(FIND_MY_STRUCTURES, { filter: { structureType: structureType } }).length;
   structuresBuilt += room.find(FIND_MY_CONSTRUCTION_SITES, { filter: { structureType: structureType } }).length;
-  // console.log('structuresAvailable',structuresAvailable,'structuresBuilt',structuresBuilt);
 
   var newSiteCode = -1;
   if (structuresBuilt < structuresAvailable) {
@@ -46,6 +45,12 @@ module.exports.loop = function () {
       delete Memory.creeps[name];
     }
   }
+  // initialize constructionSites.roads in memory if not defined
+  if (!Memory.constructionSites) {
+    Memory.constructionSites = {}
+  } else if (!Memory.constructionSites.roads) {
+    Memory.constructionSites.roads = {};
+  }
 
   for (let name in Game.creeps) {
     var creep = Game.creeps[name];
@@ -62,7 +67,7 @@ module.exports.loop = function () {
   }
 
   var minimumNumberOfHarvesters = 10;
-  var minimumNumberOfUpgraders = 1;
+  var minimumNumberOfUpgraders = 2;
   var minimumNumberOfBuilders = 1;
   var minimumNumberOfRepairers = 2;
   var minimumNumberOfWallRepairers = 1;

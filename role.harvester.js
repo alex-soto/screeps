@@ -25,22 +25,22 @@ module.exports = {
         
         var existing = creep.pos.lookFor(LOOK_STRUCTURES) || creep.pos.lookFor(LOOK_CONSTRUCTION_SITES);
         if (existing.length === 0) {
-          if (!Memory.constructionSites) {
-            Memory.constructionSites = {}
-          } else if (!Memory.constructionSites.roads) {
-            Memory.constructionSites.roads = {};
-          }
 
           var constructionSites = Memory.constructionSites;
+          
           if (!constructionSites.roads[creep.pos]) {
             constructionSites.roads[creep.pos] = 0;
-            
-          } 
-          if (constructionSites.roads[creep.pos] < 10) {
+          } else if (constructionSites.roads[creep.pos] < 10) {
             constructionSites.roads[creep.pos]++;
-          } else {
-            creep.say('Build road:',constructionSites.roads[creep.pos]);
-            creep.room.createConstructionSite(creep.pos.x, creep.pos.y, STRUCTURE_ROAD)
+          } else if (constructionSites.roads[creep.pos] >= 10){
+            var adjacentStructures = creep.pos.findInRange(FIND_MY_STRUCTURES, 1, { 
+              filter: { structureType: STRUCTURE_ROAD } 
+            }).length + 
+              creep.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 1).length;
+            if (adjacentStructures < 4) {
+              creep.say('Build road:',constructionSites.roads[creep.pos]);
+              creep.room.createConstructionSite(creep.pos.x, creep.pos.y, STRUCTURE_ROAD)
+            }
             delete Memory.constructionSites.roads[creep.pos];
           }
 
