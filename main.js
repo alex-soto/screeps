@@ -4,6 +4,41 @@ var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 var roleRepairer = require('role.repairer');
 
+function findPosForConstructionSite(room, spawn, structureType, areaToBuild) {
+  var area = areaToBuild || {
+    top: spawn.pos.y - 5,
+    left: spawn.pos.x - 5,
+    bottom: spawn.pos.y + 5,
+    right: spawn.pos.x + 5
+  };
+  // number of structures available to build
+  var structuresAvailable = CONTROLLER_STRUCTURES[structureType][room.controller.level];
+  // number of structures already built
+  var structuresBuilt = room.find(FIND_MY_STRUCTURES, { filter: { structureType } }).length;
+  structuresBuilt += room.find(FIND_MY_CONSTRUCTION_SITES, { filter: { structureType: structureType } }).length;
+  // console.log('structuresAvailable',structuresAvailable,'structuresBuilt',structuresBuilt);
+
+  var newSiteCode = -1;
+  if (structuresBuilt < structuresAvailable) {
+    var look = room.lookAtArea(area.top, area.left, area.bottom, area.right, true);
+    for (let i in look) {
+      var pos = look[i];
+      if (Math.abs(pos.x - spawn.pos.x) > 1 && Math.abs(pos.y - spawn.pos.y) > 1) {
+        if (pos.structure && pos.structure.structureType === STRUCTURE_ROAD) {
+          pos.structure.destroy();
+        } else if (pos.constructionSite && pos.constructionSite.structureType === STRUCTURE_ROAD) {
+          pos.constructionSite.remove();
+        }
+        newSiteCode = room.createConstructionSite(pos.x, pos.y, structureType);
+        if (newSiteCode >= 0) {
+          break;
+        }
+      }
+    }
+  }
+  return newSiteCode
+}
+
 module.exports.loop = function () {
   // clear memory
   for (let name in Memory.creeps) {
@@ -55,7 +90,7 @@ module.exports.loop = function () {
   }
 
   var bodyArray = null;
-  // var bodyArray = role === 'harvester' ? [WORK, WORK, CARRY, MOVE] : [WORK, CARRY, MOVE, MOVE];
+
   switch (role) {
     case 'harvester':
       bodyArray = [WORK, WORK, CARRY, MOVE];
@@ -73,8 +108,11 @@ module.exports.loop = function () {
       break;
   }
 
-  for (let spawn in Game.spawns) {
-    var room = Game.spawns[spawn].room;
+  for (let s in Game.spawns) {
+    var spawn = Game.spawns[s];
+    var room = spawn.room;
+
+    findPosForConstructionSite(room, spawn, STRUCTURE_EXTENSION);
 
     var towers = room.find(FIND_STRUCTURES, {
       filter: s => s.structureType === STRUCTURE_TOWER
@@ -89,11 +127,11 @@ module.exports.loop = function () {
     }
 
     var energyAvailable = room.energyCapacityAvailable;
-    var name = Game.spawns[spawn].createCustomCreep(energyAvailable, role);
+    var name = spawn.createCustomCreep(energyAvailable, role);
 
     if (name === ERR_NOT_ENOUGH_ENERGY && numberOfHarvesters === 0) {
       energyAvailable = room.energyAvailable;
-      name = Game.spawns[spawn].createCustomCreep(energyAvailable, role);
+      name = spawn.createCustomCreep(energyAvailable, role);
     }
   }
 
