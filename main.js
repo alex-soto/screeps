@@ -1,10 +1,19 @@
 require('prototype.spawn')();
+require('prototype.creep')();
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 var roleRepairer = require('role.repairer');
 
 function findPosForConstructionSite(room, spawn, structureType, areaToBuild) {
+
+  // _.sum(Game.spawns.Spawn1.room.find(FIND_SOURCES), s => s.energy)
+  _.sum(
+    _.map(Game.spawns.Spawn1.room.find(FIND_MY_CREEPS, c => c.memory.role === 'harvester'), c => c.getActiveBodyparts(WORK))
+  ) * 2;
+  
+  _.map(Game.spawns.Spawn1.room.find(FIND_MY_CREEPS, c => c.memory.role === 'harvester'), c => c.getActiveBodyparts(WORK))
+
   var area = areaToBuild || {
     top: spawn.pos.y - 5,
     left: spawn.pos.x - 5,
@@ -45,15 +54,21 @@ module.exports.loop = function () {
       delete Memory.creeps[name];
     }
   }
-  // initialize constructionSites.roads in memory if not defined
+
+  // initialize proerties in memory if not defined
   if (!Memory.constructionSites) {
     Memory.constructionSites = {}
   } else if (!Memory.constructionSites.roads) {
     Memory.constructionSites.roads = {};
   }
 
+  if (!Memory.debug) {
+    Memory.debug = {};
+  }
+
   for (let name in Game.creeps) {
     var creep = Game.creeps[name];
+    creep.findLocationForRoad();
 
     if (creep.memory.role === 'harvester') {
       roleHarvester.run(creep);
@@ -70,7 +85,7 @@ module.exports.loop = function () {
   var minimumNumberOfUpgraders = 2;
   var minimumNumberOfBuilders = 1;
   var minimumNumberOfRepairers = 2;
-  var minimumNumberOfWallRepairers = 1;
+  var minimumNumberOfWallRepairers = 2;
 
   var numberOfHarvesters = _.sum(Game.creeps, c => c.memory.role === 'harvester');
   var numberOfUpgraders = _.sum(Game.creeps, c => c.memory.role === 'upgrader');
@@ -87,37 +102,18 @@ module.exports.loop = function () {
   } else if (numberOfRepairers < minimumNumberOfRepairers) {
     role = 'repairer';
   } else if (numberOfBuilders < minimumNumberOfBuilders) {
-    role = 'builder';
-  } else if (numberOfWallRepairers < minimumNumberOfWallRepairers) {
     role = 'wallRepairer';
+  } else if (numberOfWallRepairers < minimumNumberOfWallRepairers) {
+    role = 'builder';
   } else {
     role = 'builder';
   }
 
-  var bodyArray = null;
-
-  switch (role) {
-    case 'harvester':
-      bodyArray = [WORK, WORK, CARRY, MOVE];
-      break;
-    case 'upgrader':
-      bodyArray = [WORK, CARRY, MOVE, MOVE];
-      break;
-    case 'repairer':
-      bodyArray = [WORK, WORK, CARRY, MOVE];
-    case 'builder':
-      bodyArray = [WORK, WORK, CARRY, MOVE];
-      break;
-    default:
-      bodyArray = [WORK, WORK, CARRY, MOVE];
-      break;
-  }
+  Memory.debug.roleToBuild = role;
 
   for (let s in Game.spawns) {
     var spawn = Game.spawns[s];
     var room = spawn.room;
-
-    findPosForConstructionSite(room, spawn, STRUCTURE_EXTENSION);
 
     var towers = room.find(FIND_STRUCTURES, {
       filter: s => s.structureType === STRUCTURE_TOWER
@@ -129,6 +125,12 @@ module.exports.loop = function () {
       if (target) {
         tower.attack(target);
       }
+    }
+
+    if (spawn.room.find(FIND_HOSTILE_CREEPS).length > 0) {
+      role = 'grunt';
+    } else {
+      findPosForConstructionSite(room, spawn, STRUCTURE_EXTENSION);
     }
 
     var energyAvailable = room.energyCapacityAvailable;

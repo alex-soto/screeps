@@ -12,7 +12,7 @@ module.exports = {
 
     if (creep.memory.working === true) {
       var walls = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: s => s.structureType === STRUCTURE_WALL
+        filter: s => s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART
       });
   
       var target = null;
