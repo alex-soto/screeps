@@ -1,5 +1,5 @@
 require('prototype.spawn')();
-require('prototype.creep')();
+// require('prototype.creep')();
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
@@ -68,7 +68,7 @@ module.exports.loop = function () {
 
   for (let name in Game.creeps) {
     var creep = Game.creeps[name];
-    creep.findLocationForRoad();
+    // creep.findLocationForRoad();
 
     if (creep.memory.role === 'harvester') {
       roleHarvester.run(creep);
